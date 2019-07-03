@@ -1,0 +1,83 @@
+#!/bin/bash
+
+OPTIND=1
+FILENAME=''
+
+show_help() {
+    echo "NAME:"
+    echo "  $0 - Loads environment from ndjson files, selected by \`jq ._name\`"
+    echo ""
+    echo "USAGE:"
+    echo "  $0 -f FILE [NAME_OF_ENV_SET]"
+    echo ""
+    echo "GLOBAL OPTIONS:"
+    echo "  -f    The file to load environment sets from"
+    echo "  -h    Get (this) help"
+    echo ""
+    echo "ARGUMENTS:"
+    echo "  NAME_OF_ENV_SET    The name of the environment to list (will list all if not specified)"
+    echo ""
+    exit 0
+}
+
+while getopts "hf:" opt; do
+    case "$opt" in
+        h)
+            show_help
+            exit 0
+            ;;
+        f)  FILENAME="$OPTARG"
+            ;;
+    esac
+done
+
+shift $(( OPTIND - 1 ))
+ENV_SET="$1"
+
+
+
+if [ "$FILENAME" == '' ]; then
+    show_help
+    exit 1
+fi
+
+if [ "$ENV_SET" == '' ]; then
+    echo "Pass one of the following: "
+    echo ""
+    exec<"$FILENAME"
+    while read LINE
+    do
+        NAME=$(echo "$LINE" | jq -r ._name)
+        echo " * $NAME"
+    done
+    echo ""
+    exit 0
+fi
+
+
+DONE=0
+while read LINE; do
+    NAME=$(echo "$LINE" | jq -r ._name)
+    if [ $? -ne 0 ]; then
+        echo "Invalid JSON: '$LINE'"
+        DONE=1
+    fi
+    if [ "$DONE" -eq 0 ] && [ "$NAME" == "$ENV_SET" ]; then
+        echo "Found: $NAME - Loading Environment"
+        KEYS=$(echo "$LINE" | jq keys | jq .[] -r | grep -v _name)
+        echo ""
+        for K in $KEYS; do
+            V=$(echo "$LINE" | jq ".$K" -r)
+            export "$K"="$V"
+            echo "  $K = $V"
+            DONE=1
+        done
+        echo ""
+    fi
+done < "$FILENAME"
+
+if [ "$DONE" -eq 0 ]; then
+    echo "Error: '$ENV_SET' not found in '$FILENAME'"
+fi
+
+
