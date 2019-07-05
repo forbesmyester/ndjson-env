@@ -7,26 +7,26 @@ I have a tool called [pgpass-env](https://github.com/forbesmyester/psql-tools#pg
 Thinking about this problem, it seems to be a general problem:
 
  * Given a file, which somehow has a list of sets of values of environmental variables you may want to apply.
- * And a way to identify which set you wish to apply.
- * Set those environmental variables.
+ * And a way to identify which values you wish to apply.
+ * Apply those environmental variables.
 
 This is what this software does.
 
 ## Example
 
-The environmental variables can set stored in any file via an NDJSON. so one that sets up environmental variables for the JDK might look something like this:
+The environmental variables are stored in any file as NDJSON. For example a file that sets up environmental variables for the JDK might look something like this:
 
 
     {"_name": "JDK18", "JAVA_HOME": "/use/local/j2sdk-1.8"}
     {"_name": "JDK111", "JAVA_HOME": "/use/local/j2sdk-1.11", "CLASSPATH": "/somewhere/else"}
 
-This file might be stored in ~/.jdk-env-vars, if it were you could apply the `JDK111` environmental variables using the following:
+This could might be stored in `~/.jdk-env-vars`, if it were you could apply the `JDK111` environmental variables using the following:
 
 ```bash
 . ndjson-env -f ~/.jdk-env-vars JDK111
 ```
 
-Once you've ran this the `JAVA_HOME` and `CLASSPATH` environmental variables will be set up. NOTE: The `.` before the command is important, it pulls the environmental variables into your current environment.
+Once you've ran this the `JAVA_HOME` and `CLASSPATH` environmental variables will be set up. NOTE: The `.` before the command is important, it pulls the environmental variables defined in the script into your current environment.
 
 ## Usage
 
@@ -46,7 +46,7 @@ Once you've ran this the `JAVA_HOME` and `CLASSPATH` environmental variables wil
 
 ## Installation
 
-Installation is simple with some BASH tomfoolery:
+Installation is simple with BASH:
 
 ```shell
 cp ./ndjson-env ~/.local/bin/ndjson-env && chmod +x ~/.local/bin/ndjson-env
