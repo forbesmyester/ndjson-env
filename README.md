@@ -49,6 +49,6 @@ Once you've ran this the `JAVA_HOME` and `CLASSPATH` environmental variables wil
 Installation is simple with BASH:
 
 ```shell
-cp ./ndjson-env ~/.local/bin/ndjson-env && chmod +x ~/.local/bin/ndjson-env
+mkdir -p ~/.local/bin && cp ./ndjson-env ~/.local/bin/ndjson-env && chmod +x ~/.local/bin/ndjson-env
 ```
 
