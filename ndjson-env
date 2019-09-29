@@ -48,7 +48,9 @@ if [ "$ENV_SET" == '' ]; then
     while read LINE
     do
         NAME=$(echo "$LINE" | jq -r ._name)
-        echo " * $NAME"
+        if [[ "$NAME" =~ [a-zA-Z0-9] ]]; then
+            echo " * $NAME"
+        fi
     done
     echo ""
     exit 0

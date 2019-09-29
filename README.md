@@ -52,3 +52,7 @@ Installation is simple with BASH:
 mkdir -p ~/.local/bin && cp ./ndjson-env ~/.local/bin/ndjson-env && chmod +x ~/.local/bin/ndjson-env
 ```
 
+## Versions
+
+ 1.0.0 - Initial Release
+ 1.0.1 - 2019-09-29: Fix: Don't show an empty named config for empty lines.
