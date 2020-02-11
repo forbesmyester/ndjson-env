@@ -34,8 +34,6 @@ done
 shift $(( OPTIND - 1 ))
 ENV_SET="$1"
 
-
-
 if [ "$FILENAME" == '' ]; then
     show_help
     exit 1
@@ -45,7 +43,7 @@ if [ "$ENV_SET" == '' ]; then
     echo "Pass one of the following: "
     echo ""
     exec<"$FILENAME"
-    while read LINE
+    while read -r LINE
     do
         NAME=$(echo "$LINE" | jq -r ._name)
         if [[ "$NAME" =~ [a-zA-Z0-9] ]]; then
@@ -56,9 +54,22 @@ if [ "$ENV_SET" == '' ]; then
     exit 0
 fi
 
+# == START FUNCTIONS ===========================================================
+
+function infect_line {
+    local RE='(.*)\$\{([A-Z][A-Z0-9]*)\}(.*)'
+    local OUT=$1
+    if [[ $OUT =~ $RE ]]; then
+        local X="${BASH_REMATCH[2]}"
+        OUT="${BASH_REMATCH[1]}${!X}${BASH_REMATCH[3]}"
+    fi
+    echo $OUT
+}
+
+# == START OF REAL PROGRAM =====================================================
 
 DONE=0
-while read LINE; do
+while read -r LINE; do
     NAME=$(echo "$LINE" | jq -r ._name)
     if [ $? -ne 0 ]; then
         echo "Invalid JSON: '$LINE'"
@@ -69,7 +80,8 @@ while read LINE; do
         KEYS=$(echo "$LINE" | jq keys | jq .[] -r | grep -v _name)
         echo ""
         for K in $KEYS; do
-            V=$(echo "$LINE" | jq ".$K" -r)
+            VSRC=$(echo "$LINE" | jq ".$K" -r)
+            V=$(infect_line "$VSRC")
             export "$K"="$V"
             echo "  $K = $V"
             DONE=1

@@ -17,8 +17,8 @@ This is what this software does.
 The environmental variables are stored in any file as NDJSON. For example a file that sets up environmental variables for the JDK might look something like this:
 
 
-    {"_name": "JDK18", "JAVA_HOME": "/use/local/j2sdk-1.8"}
-    {"_name": "JDK111", "JAVA_HOME": "/use/local/j2sdk-1.11", "CLASSPATH": "/somewhere/else"}
+    {"_name": "OPENJDK", "JAVA_HOME": "/use/local/openjdk", "PATH": "${PATH}:/usr/local/openjdk/bin" }
+    {"_name": "NODEJS", "PATH": "${PATH}:node_modules/.bin" }
 
 This could might be stored in `~/.jdk-env-vars`, if it were you could apply the `JDK111` environmental variables using the following:
 
