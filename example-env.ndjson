@@ -1,0 +1,2 @@
+{"_name": "OPENJDK", "JAVA_HOME": "/use/local/openjdk", "PATH": "${PATH}:/usr/local/openjdk/bin" }
+{"_name": "NODEJS", "PATH": "${PATH}:node_modules/.bin" }

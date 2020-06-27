@@ -17,8 +17,8 @@ This is what this software does.
 The environmental variables are stored in any file as NDJSON. For example a file that sets up environmental variables for the JDK might look something like this:
 
 
-    {"_name": "JDK18", "JAVA_HOME": "/use/local/j2sdk-1.8"}
-    {"_name": "JDK111", "JAVA_HOME": "/use/local/j2sdk-1.11", "CLASSPATH": "/somewhere/else"}
+    {"_name": "OPENJDK", "JAVA_HOME": "/use/local/openjdk", "PATH": "${PATH}:/usr/local/openjdk/bin" }
+    {"_name": "NODEJS", "PATH": "${PATH}:node_modules/.bin" }
 
 This could might be stored in `~/.jdk-env-vars`, if it were you could apply the `JDK111` environmental variables using the following:
 
@@ -30,19 +30,27 @@ Once you've ran this the `JAVA_HOME` and `CLASSPATH` environmental variables wil
 
 ## Usage
 
+```
+NAME:
+  ./ndjson-env - Loads environment from ndjson files, selected by `jq ._name`
 
-    NAME:
-      ndjson-env - Loads environment from ndjson files, selected by `jq ._name`
-    
-    USAGE:
-      ndjson-env -f FILE [NAME_OF_ENV_SET]
-    
-    GLOBAL OPTIONS:
-      -f    The file to load environment sets from
-      -h    Get (this) help
-    
-    ARGUMENTS:
-      NAME_OF_ENV_SET    The name of the environment to list (will list all if not specified)
+USAGE:
+  ./ndjson-env -f FILE [NAME_OF_ENV_SET]
+
+GLOBAL OPTIONS:
+  -f    The file to load environment sets from
+  -r    Output raw (for scripting and navi)
+  -h    Get (this) help
+
+ARGUMENTS:
+  NAME_OF_ENV_SET    The name of the environment to list (will list all if not specified)
+```
+
+Using the `-r` flag and the [`ndjson-env.cheat`](./ndjson-env.cheat) file in this repository allows the following usage with [navi](https://github.com/denisidoro/navi/)
+
+```
+. $(navi --best ndjson-env --print)
+```
 
 ## Installation
 
@@ -50,6 +58,12 @@ Installation is simple with BASH:
 
 ```shell
 mkdir -p ~/.local/bin && cp ./ndjson-env ~/.local/bin/ndjson-env && chmod +x ~/.local/bin/ndjson-env
+```
+
+However nowadays I use [basher](https://github.com/basherpm/basher) to insall:
+
+```
+basher install forbesmyester/ndjson-env
 ```
 
 ## Versions

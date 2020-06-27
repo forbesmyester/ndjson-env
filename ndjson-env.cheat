@@ -1,0 +1,7 @@
+% ndjson-env
+
+# Env vars using `. $(navi --print)`
+/ndjson-env -r -f <filename> <envname>
+
+$ filename: find . -maxdepth 1 -type f --- --column 1
+$ envname:  ./ndjson-env -r -f "$filename"
