@@ -91,6 +91,9 @@ while read -r LINE; do
         for K in $KEYS; do
             VSRC=$(echo "$LINE" | jq ".$K" -r)
             V=$(infect_line "$VSRC")
+            if [ "$V" == "null" ]; then
+                V=""
+            fi
             export "$K"="$V"
             [ $RAW -eq 0 ] && echo "  $K = $V"
             DONE=1
