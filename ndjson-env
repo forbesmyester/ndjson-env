@@ -2,18 +2,25 @@
 
 OPTIND=1
 FILENAME=''
+ARGUMENT_MODE=0
+PROCESS_INFECTION=1
 RAW=0
 
 show_help() {
     echo "NAME:"
     echo "  $0 - Loads environment from ndjson files, selected by \`jq ._name\`"
     echo ""
-    echo "USAGE:"
+    echo "USAGE FOR FILE MODE:"
     echo "  $0 -f FILE [NAME_OF_ENV_SET]"
+    echo ""
+    echo "USAGE FOR ARGUMENT MODE:"
+    echo "  $0 -a '{\"YOUR_ENV_NAME\":\"Your env value\"}'"
     echo ""
     echo "GLOBAL OPTIONS:"
     echo "  -f    The file to load environment sets from"
     echo "  -r    Output raw (for scripting and navi)"
+    echo "  -a    Read a (single) JSON document as an arg and export they KEY=VALUE"
+    echo "  -I    No interpolination of environmental variables"
     echo "  -h    Get (this) help"
     echo ""
     echo "ARGUMENTS:"
@@ -22,7 +29,7 @@ show_help() {
     exit 0
 }
 
-while getopts "hrf:" opt; do
+while getopts "harIf:" opt; do
     case "$opt" in
         h)
             show_help
@@ -30,6 +37,12 @@ while getopts "hrf:" opt; do
             ;;
         r)
             RAW=1
+            ;;
+        a)
+            ARGUMENT_MODE=1
+            ;;
+        I)
+            PROCESS_INFECTION=0
             ;;
         f)  FILENAME="$OPTARG"
             ;;
@@ -42,25 +55,26 @@ done
 shift $(( OPTIND - 1 ))
 ENV_SET="$1"
 
-if [ "$FILENAME" == '' ]; then
-    show_help
-    exit 1
-fi
-
-if [ "$ENV_SET" == '' ]; then
-    [ $RAW -eq 0 ] && echo "Pass one of the following: "
-    [ $RAW -eq 0 ] && echo ""
-    exec<"$FILENAME"
-    while read -r LINE
-    do
-        NAME=$(echo "$LINE" | jq -r ._name)
-        if [[ "$NAME" =~ [a-zA-Z0-9] ]]; then
-            [ $RAW -eq 1 ] && echo "$NAME"
-            [ $RAW -eq 0 ] && echo " * $NAME"
-        fi
-    done
-    [ $RAW -eq 0 ] && echo ""
-    exit 0
+if [ "$ARGUMENT_MODE" -eq 0 ]; then
+    if [ "$FILENAME" == '' ]; then
+        show_help
+        exit 1
+    fi
+    if [ "$ENV_SET" == '' ]; then
+        [ $RAW -eq 0 ] && echo "Pass one of the following: "
+        [ $RAW -eq 0 ] && echo ""
+        exec<"$FILENAME"
+        while read -r LINE
+        do
+            NAME=$(echo "$LINE" | jq -r ._name)
+            if [[ "$NAME" =~ [a-zA-Z0-9] ]]; then
+                [ $RAW -eq 1 ] && echo "$NAME"
+                [ $RAW -eq 0 ] && echo " * $NAME"
+            fi
+        done
+        [ $RAW -eq 0 ] && echo ""
+        exit 0
+    fi
 fi
 
 # == START FUNCTIONS ===========================================================
@@ -75,35 +89,67 @@ function infect_line {
     echo "$OUT"
 }
 
+function get_kv {
+    local KEYS
+    local LINE
+    local VSRC
+    local V
+    local K
+    LINE="$1"
+    KEYS=$(echo "$LINE" | jq keys | jq .[] -r | grep -v _name)
+    for K in $KEYS; do
+        VSRC=$(echo "$LINE" | jq ".$K" -r)
+        if [ "$PROCESS_INFECTION" -gt 0 ]; then
+            V=$(infect_line "$VSRC")
+        else
+            V="$VSRC"
+        fi
+        if [ "$V" == "null" ]; then
+            V=""
+        fi
+        echo "$K"="$V"
+    done
+}
+
 # == START OF REAL PROGRAM =====================================================
 
-DONE=0
-while read -r LINE; do
-    NAME=$(echo "$LINE" | jq -r ._name)
-    if [ $? -ne 0 ]; then
-        echo "Invalid JSON: '$LINE'"
-        DONE=1
+if [ "$ARGUMENT_MODE" -gt 0 ]; then
+    LINE="$1"
+    LINES="$(get_kv "$LINE")"
+    if [ "$RAW" -gt 0 ]; then
+        echo "$LINES"
+    else
+        while IFS= read -r L; do
+            echo $L
+            export "$L"
+        done <<< "$LINES"
     fi
-    if [ "$DONE" -eq 0 ] && [ "$NAME" == "$ENV_SET" ]; then
-        [ $RAW -eq 0 ] && echo "Found: $NAME - Loading Environment"
-        KEYS=$(echo "$LINE" | jq keys | jq .[] -r | grep -v _name)
-        [ $RAW -eq 0 ] && echo ""
-        for K in $KEYS; do
-            VSRC=$(echo "$LINE" | jq ".$K" -r)
-            V=$(infect_line "$VSRC")
-            if [ "$V" == "null" ]; then
-                V=""
-            fi
-            export "$K"="$V"
-            [ $RAW -eq 0 ] && echo "  $K = $V"
+else
+    DONE=0
+    while read -r LINE; do
+        NAME=$(echo "$LINE" | jq -r ._name)
+        if [ $? -ne 0 ]; then
+            echo "Invalid JSON: '$LINE'"
             DONE=1
-        done
-        [ $RAW -eq 0 ] && echo ""
+        fi
+        if [ "$DONE" -eq 0 ] && [ "$NAME" == "$ENV_SET" ]; then
+            [ $RAW -eq 0 ] && echo "Found: $NAME - Loading Environment"
+            LINES="$(get_kv "$LINE")"
+            if [ "$RAW" -gt 0 ]; then
+                echo "$LINES"
+            else
+                while IFS= read -r L; do
+                    echo $L
+                    export "$L"
+                done <<< "$LINES"
+            fi
+            DONE=1
+            [ $RAW -eq 0 ] && echo ""
+        fi
+    done < "$FILENAME"
+
+    if [ "$DONE" -eq 0 ]; then
+        echo "Error: '$ENV_SET' not found in '$FILENAME'"
     fi
-done < "$FILENAME"
 
-if [ "$DONE" -eq 0 ]; then
-    echo "Error: '$ENV_SET' not found in '$FILENAME'"
 fi
-
-
