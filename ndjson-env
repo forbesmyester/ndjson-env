@@ -120,7 +120,7 @@ if [ "$ARGUMENT_MODE" -gt 0 ]; then
         echo "$LINES"
     else
         while IFS= read -r L; do
-            echo $L
+            # echo $L
             export "$L"
         done <<< "$LINES"
     fi
